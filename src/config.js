@@ -19,7 +19,7 @@ export const HORARIOS = [
   { act: 'Taekwondo', dias: 'Lunes, miércoles y viernes', hora: '18:30 a 19:30' },
   { act: 'Patín', dias: 'Sábados', hora: '10:00 a 12:00' },
 ];
-export const SECRETARIA = 'Secretaría: lunes a viernes de 17 a 20 h';
+export const SECRETARIA = 'Secretaría: lunes a viernes de 9 a 20 h';
 
 export const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 export const MESES_LARGO = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
