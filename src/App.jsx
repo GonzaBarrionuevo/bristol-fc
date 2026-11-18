@@ -136,8 +136,8 @@ function Socio({ estado, sesion, mutate, salir }) {
             {[...estado.avisos].sort((a, b) => b.fecha.localeCompare(a.fecha) || b.id - a.id).map((a) => <div className="aviso" key={a.id}><b>{a.titulo}</b><small>{fechaAR(a.fecha)}</small><p>{a.texto}</p></div>)}</div>
           <div className="card"><h2>Contacto</h2><p>Administración: {WHATSAPP_VISIBLE} <small className="muted">(número de prueba)</small></p><a className="btn full wa" href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Hola, soy ' + s.nombre + ' ' + s.apellido + ' (socio N° ' + s.num + '). Tengo una consulta.')}`} target="_blank" rel="noreferrer">Escribir por WhatsApp</a></div>
         </>}
-        {tab === 'asist' && <div className="card"><h2>Mi asistencia</h2><p>Asistencia: <b>{pct}%</b> <small className="muted">({asist.filter((a) => a.presente).length} de {asist.length} clases)</small></p>
-          <ul className="lista">{asist.slice(0, 10).map((a) => <li key={a.fecha}><span>{fechaAR(a.fecha)}</span><Tag ok={a.presente}>{a.presente ? 'Presente' : 'Ausente'}</Tag></li>)}</ul></div>}
+        {tab === 'asist' && <div className="card"><h2>Mi asistencia · {s.actividad}</h2><p>Asistencia: <b>{pct}%</b> <small className="muted">({asist.filter((a) => a.presente).length} de {asist.length} clases)</small></p>
+          <ul className="lista">{asist.slice(0, 10).map((a) => <li key={a.fecha}><span>{fechaAR(a.fecha)}<br /><small>{a.actividad || s.actividad}</small></span><Tag ok={a.presente}>{a.presente ? 'Presente' : 'Ausente'}</Tag></li>)}</ul></div>}
       </main>
       <a className="fab" aria-label="WhatsApp del club" href={`https://wa.me/${WHATSAPP}`} target="_blank" rel="noreferrer">WhatsApp</a>
       <nav className="bottom">{[['inicio', 'Inicio'], ['cuotas', 'Cuotas'], ['carnet', 'Carnet'], ['club', 'Club'], ['asist', 'Asistencia']].map(([k, n]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{n}</button>)}</nav>
@@ -233,8 +233,11 @@ function Cuotas({ estado, onPagar }) {
   const filas = estado.socios.filter((s) => (act === 'Todos' || s.actividad === act) && (est === 'Todos' || (est === 'Al día') === alDia(estado, s)) &&
     (`${s.nombre} ${s.apellido} ${s.num}`.toLowerCase().includes(q.trim().toLowerCase())));
   const dia = estado.socios.filter((s) => alDia(estado, s)).length;
+  const deudaTotal = estado.socios.reduce((t, s) => t + deuda(estado, s), 0);
+  const cobradoAnio = estado.pagos.filter((p) => p.anio === estado.anio).reduce((t, p) => t + p.monto, 0);
+  const deudaFiltrada = filas.reduce((t, s) => t + deuda(estado, s), 0);
   return (<>
-    <div className="kpis"><div><b>{estado.socios.length}</b><small>Socios activos</small></div><div className="okk"><b>{dia}</b><small>Al día</small></div><div className="badk"><b>{estado.socios.length - dia}</b><small>Con atrasos</small></div><div><b>{dinero(pagosDelMes(estado, ym).reduce((a, p) => a + p.monto, 0))}</b><small>Cobrado {MESES[h.m - 1]}</small></div></div>
+    <div className="kpis"><div><b>{estado.socios.length}</b><small>Socios activos</small></div><div className="okk"><b>{dia}</b><small>Al día</small></div><div className="badk"><b>{estado.socios.length - dia}</b><small>Con atrasos</small></div><div><b>{dinero(pagosDelMes(estado, ym).reduce((a, p) => a + p.monto, 0))}</b><small>Cobrado {MESES[h.m - 1]}</small></div><div><b>{dinero(cobradoAnio)}</b><small>Cobrado en {h.y}</small></div><div className="badk"><b>{dinero(deudaTotal)}</b><small>Deuda total</small></div></div>
     <div className="filtros">
       <input placeholder="Buscar por nombre, apellido o N°" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar" />
       <select value={act} onChange={(e) => setAct(e.target.value)} aria-label="Filtrar por actividad"><option>Todos</option>{ACTIVIDADES.map((a) => <option key={a}>{a}</option>)}</select>
@@ -244,7 +247,8 @@ function Cuotas({ estado, onPagar }) {
       <tbody>{filas.map((s) => { const d = adeudados(estado, s); return <tr key={s.id}><td>{s.num}</td><td>{s.apellido}, {s.nombre}<br /><small>{s.categoria}</small></td><td>{s.actividad}</td>
         <td>{d.length ? <Tag>{d.length} {d.length === 1 ? 'mes' : 'meses'} adeudado{d.length === 1 ? '' : 's'}</Tag> : <Tag ok>Al día</Tag>}</td><td>{d.length ? dinero(deuda(estado, s)) : '-'}</td>
         <td><button className="btn sm" onClick={() => onPagar(s.id)}>Registrar pago</button></td></tr>; })}
-        {!filas.length && <tr><td colSpan="6" className="muted">No hay socios con esos filtros.</td></tr>}</tbody></table></div>
+        {!filas.length && <tr><td colSpan="6" className="muted">No hay socios con esos filtros.</td></tr>}</tbody>
+      <tfoot><tr><td colSpan="4"><b>Total adeudado ({filas.length} {filas.length === 1 ? 'socio' : 'socios'} en la lista)</b></td><td colSpan="2"><b>{dinero(deudaFiltrada)}</b></td></tr></tfoot></table></div>
   </>);
 }
 
@@ -277,7 +281,7 @@ function AsistAdmin({ estado, mutate, aviso }) {
   const [marcas, setMarcas] = useState({});
   const val = (id) => (id in marcas ? marcas[id] : !!estado.asistencia.find((a) => a.socioId === id && a.fecha === hoy)?.presente);
   const guardarAs = () => {
-    mutate((e) => { socios.forEach((s) => { e.asistencia = e.asistencia.filter((a) => !(a.socioId === s.id && a.fecha === hoy)); e.asistencia.push({ socioId: s.id, fecha: hoy, presente: val(s.id) }); }); });
+    mutate((e) => { socios.forEach((s) => { e.asistencia = e.asistencia.filter((a) => !(a.socioId === s.id && a.fecha === hoy)); e.asistencia.push({ socioId: s.id, fecha: hoy, actividad: act, presente: val(s.id) }); }); });
     aviso(`Asistencia de ${act} guardada (${fechaAR(hoy)}).`); setMarcas({});
   };
   return <div className="card"><h2>Asistencia de hoy · {fechaAR(hoy)}</h2>

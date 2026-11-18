@@ -40,7 +40,7 @@ export async function buildSeed() {
   socios.forEach((s) => {
     for (let k = 1; k <= 6; k++) {
       const f = new Date(h.y, h.m - 1, h.d - k * 3);
-      asistencia.push({ socioId: s.id, fecha: iso(f.getFullYear(), f.getMonth() + 1, f.getDate()), presente: (s.id * 7 + k) % 5 !== 0 });
+      asistencia.push({ socioId: s.id, fecha: iso(f.getFullYear(), f.getMonth() + 1, f.getDate()), actividad: s.actividad, presente: (s.id * 7 + k) % 5 !== 0 });
     }
   });
   return {
